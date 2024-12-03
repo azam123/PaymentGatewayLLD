@@ -247,6 +247,254 @@ namespace PaymentGateway
 
 2. **Retry Pattern**:
    - Handles retries with exponential backoff logic.
+   - 
+
+
+Enhancement with Strategy Pattern.
+
+To avoid tight dependency and support adding new payment methods in the future, we can use the **Strategy Pattern** instead of the Factory Pattern. The **Strategy Pattern** encapsulates different algorithms or behaviors (in this case, payment methods) and allows them to be interchangeable without modifying the client code. This approach adheres to the **Open/Closed Principle**, enabling new payment methods to be added with minimal changes.
+
+---
+
+### **Updated Design Using Strategy Pattern**
+
+#### **Key Changes**
+
+1. Define a `PaymentStrategy` interface for all payment methods.
+2. Each payment method implements the `PaymentStrategy` interface.
+3. The `PaymentGateway` class dynamically uses the appropriate payment strategy.
+
+---
+
+#### **Class Diagram**
+
+```plaintext
++------------------+
+| PaymentGateway   |
++------------------+
+| SetStrategy()    |
+| ProcessPayment() |
++------------------+
+        |
+        v
++------------------+
+| PaymentStrategy  |<---------------------------------------+
++------------------+                                        |
+| Validate()       |                                        |
+| Authorize()      |                                        |
+| Process()        |                                        |
++------------------+                                        |
+    ^            ^            ^                             |
+    |            |            |                             |
++-------+    +-------+    +-------+                         |
+|  UPI  |    | Card  |    | Bank  |                         |
++-------+    +-------+    +-------+                         |
+                                                           |
++------------------+                                       |
+| AddNewMethod     |                                       |
++------------------+                                       |
+| Implement        |--------------------------------------+
+```
+
+---
+
+#### **Code Implementation**
+
+```csharp
+using System;
+
+namespace PaymentGatewayWithStrategy
+{
+    // Strategy Interface
+    public interface IPaymentStrategy
+    {
+        bool Validate();
+        bool Authorize();
+        bool Process();
+    }
+
+    // Concrete Strategy: UPI Payment
+    public class UpiPayment : IPaymentStrategy
+    {
+        public bool Validate()
+        {
+            Console.WriteLine("Validating UPI details...");
+            return true;
+        }
+
+        public bool Authorize()
+        {
+            Console.WriteLine("Authorizing UPI transaction...");
+            return true;
+        }
+
+        public bool Process()
+        {
+            Console.WriteLine("Processing UPI payment...");
+            return true;
+        }
+    }
+
+    // Concrete Strategy: Card Payment
+    public class CardPayment : IPaymentStrategy
+    {
+        public bool Validate()
+        {
+            Console.WriteLine("Validating Card details...");
+            return true;
+        }
+
+        public bool Authorize()
+        {
+            Console.WriteLine("Authorizing Card transaction...");
+            return true;
+        }
+
+        public bool Process()
+        {
+            Console.WriteLine("Processing Card payment...");
+            return true;
+        }
+    }
+
+    // Concrete Strategy: Online Banking
+    public class OnlineBankingPayment : IPaymentStrategy
+    {
+        public bool Validate()
+        {
+            Console.WriteLine("Validating Online Banking details...");
+            return true;
+        }
+
+        public bool Authorize()
+        {
+            Console.WriteLine("Authorizing Online Banking transaction...");
+            return true;
+        }
+
+        public bool Process()
+        {
+            Console.WriteLine("Processing Online Banking payment...");
+            return true;
+        }
+    }
+
+    // Context: Payment Gateway
+    public class PaymentGateway
+    {
+        private IPaymentStrategy _paymentStrategy;
+
+        public void SetStrategy(IPaymentStrategy paymentStrategy)
+        {
+            _paymentStrategy = paymentStrategy;
+        }
+
+        public void ProcessPayment()
+        {
+            if (_paymentStrategy == null)
+            {
+                Console.WriteLine("Payment method not set.");
+                return;
+            }
+
+            if (_paymentStrategy.Validate() && _paymentStrategy.Authorize())
+            {
+                if (_paymentStrategy.Process())
+                {
+                    Console.WriteLine("Payment Processed Successfully!");
+                }
+                else
+                {
+                    Console.WriteLine("Payment Processing Failed!");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Payment Validation or Authorization Failed!");
+            }
+        }
+    }
+
+    // Main Program
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            PaymentGateway gateway = new PaymentGateway();
+
+            // Example: UPI Payment
+            Console.WriteLine("Processing UPI Payment:");
+            gateway.SetStrategy(new UpiPayment());
+            gateway.ProcessPayment();
+
+            // Example: Card Payment
+            Console.WriteLine("\nProcessing Card Payment:");
+            gateway.SetStrategy(new CardPayment());
+            gateway.ProcessPayment();
+
+            // Example: Online Banking Payment
+            Console.WriteLine("\nProcessing Online Banking Payment:");
+            gateway.SetStrategy(new OnlineBankingPayment());
+            gateway.ProcessPayment();
+        }
+    }
+}
+```
+
+---
+
+### **Advantages of Strategy Pattern**
+
+1. **Decoupling**:
+   - The `PaymentGateway` class does not depend on specific payment method implementations.
+   - New payment methods can be added without changing the existing code.
+
+2. **Flexibility**:
+   - The `SetStrategy` method allows dynamic switching between payment methods at runtime.
+
+3. **Adherence to SOLID Principles**:
+   - **Open/Closed Principle**: New payment methods can be added without modifying the `PaymentGateway` class.
+   - **Single Responsibility Principle**: Each payment method has its own implementation, keeping the code clean.
+
+---
+
+### **Adding a New Payment Method**
+
+For example, if a new method like **"CryptoPayment"** needs to be supported:
+
+1. Implement the `IPaymentStrategy` interface:
+   ```csharp
+   public class CryptoPayment : IPaymentStrategy
+   {
+       public bool Validate()
+       {
+           Console.WriteLine("Validating Crypto wallet...");
+           return true;
+       }
+
+       public bool Authorize()
+       {
+           Console.WriteLine("Authorizing Crypto transaction...");
+           return true;
+       }
+
+       public bool Process()
+       {
+           Console.WriteLine("Processing Crypto payment...");
+           return true;
+       }
+   }
+   ```
+
+2. Use it in the `PaymentGateway`:
+   ```csharp
+   gateway.SetStrategy(new CryptoPayment());
+   gateway.ProcessPayment();
+   ```
+
+This approach ensures that adding new payment methods is seamless and does not require modifying the existing classes.
+
+   
 
 3. **Architectural Pattern**:
    - **Microservices**:
